@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selector de Coordenadas</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        p {
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-width: 100%;
+        }
+        #image-wrapper {
+            position: relative;
+            display: inline-block;
+            cursor: crosshair;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+            max-width: 100%;
+        }
+        img {
+            display: block;
+            max-width: 100%; /* Responsive, but script calculates real coordinates */
+            height: auto;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+        .marker {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: #e74c3c;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+        .controls {
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #3498db;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button.clear {
+            background-color: #e74c3c;
+        }
+        button.clear:hover {
+            background-color: #c0392b;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;
+            box-sizing: border-box;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <h1>Selector de Coordenadas</h1>
+        <p>Haz clic en cualquier parte de la imagen para registrar sus coordenadas reales (X, Y).</p>
+        
+        <div id="image-wrapper">
+            <!-- La imagen se carga aquí -->
+            <img id="target-image" src="https://raw.githubusercontent.com/cristianfalconamado-glitch/Tekken-imagenes/refs/heads/main/Fondo%201%20ok.png" alt="Imagen interactiva">
+        </div>
+
+        <div class="controls">
+            <div class="buttons">
+                <button class="clear" onclick="clearCoordinates()">Borrar Todo</button>
+                <button onclick="copyToClipboard()">Copiar Coordenadas</button>
+            </div>
+            <textarea id="coords-output" readonly placeholder="Tus coordenadas aparecerán aquí..."></textarea>
+        </div>
+    </div>
+
+    <script>
+        const imageWrapper = document.getElementById('image-wrapper');
+        const targetImage = document.getElementById('target-image');
+        const output = document.getElementById('coords-output');
+        let coordList = [];
+
+        imageWrapper.addEventListener('click', function(e) {
+            // Obtenemos el rectángulo del elemento en pantalla
+            const rect = targetImage.getBoundingClientRect();
+            
+            // Calculamos la posición del clic relativa a la imagen mostrada
+            const clientX = e.clientX - rect.left;
+            const clientY = e.clientY - rect.top;
+
+            // Factor de escala por si la imagen en pantalla es más pequeña que su tamaño real original
+            const scaleX = targetImage.naturalWidth / rect.width;
+            const scaleY = targetImage.naturalHeight / rect.height;
+
+            // Calculamos las coordenadas reales en la imagen original
+            const realX = Math.round(clientX * scaleX);
+            const realY = Math.round(clientY * scaleY);
+
+            // Guardar coordenada
+            const coordStr = `X: ${realX}, Y: ${realY}`;
+            coordList.push(coordStr);
+            
+            // Actualizar textarea
+            output.value = coordList.join('\n');
+            output.scrollTop = output.scrollHeight; // Auto-scroll al final
+
+            // Añadir marcador visual
+            const marker = document.createElement('div');
+            marker.classList.add('marker');
+            marker.style.left = clientX + 'px';
+            marker.style.top = clientY + 'px';
+            imageWrapper.appendChild(marker);
+        });
+
+        function clearCoordinates() {
+            coordList = [];
+            output.value = '';
+            // Eliminar todos los marcadores visuales
+            const markers = document.querySelectorAll('.marker');
+            markers.forEach(marker => marker.remove());
+        }
+
+        function copyToClipboard() {
+            if (coordList.length === 0) {
+                alert("No hay coordenadas para copiar.");
+                return;
+            }
+            output.select();
+            output.setSelectionRange(0, 99999); /* Para dispositivos móviles */
+            navigator.clipboard.writeText(output.value).then(() => {
+                alert("Coordenadas copiadas al portapapeles.");
+            }).catch(err => {
+                console.error('Error al copiar: ', err);
+            });
+        }
+    </script>
+</body>
+</html>
+
